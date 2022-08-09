@@ -115,6 +115,13 @@
 " green     #859900  2/2 green     64 #5f8700 60 -20  65 133 153   0  68 100  60
 "
 " ---------------------------------------------------------------------
+" 16 PALETTE MAPPING
+" ---------------------------------------------------------------------
+"
+" s:base02 s:red    s:green  s:yellow s:blue  s:magenta s:cyan  s:base2
+" s:base03 s:orange s:base01 s:base00 s:base0 s:violet  s:base1 s:base3
+"
+" ---------------------------------------------------------------------
 " COLORSCHEME HACKING
 " ---------------------------------------------------------------------
 "
@@ -221,6 +228,7 @@ call s:SetOption("visibility","normal")
 call s:SetOption("diffmode","normal")
 call s:SetOption("hitrail",0)
 call s:SetOption("menu",1)
+call s:SetOption("truecolors",0)
 
 "}}}
 " Colorscheme initialization "{{{
@@ -240,7 +248,25 @@ let colors_name = "solarized"
 " leave the hex values out entirely in that case and include only cterm colors)
 " We also check to see if user has set solarized (force use of the
 " neutral gray monotone palette component)
-if (has("gui_running") && g:solarized_degrade == 0)
+
+" Check if both vim and terminal support true colors. 
+if (g:solarized_truecolors == 1)
+    let s:truecolors=1
+elseif has("termguicolors") && &termguicolors && ($COLORTERM =~ 'truecolor')
+    let s:truecolors=1
+else
+    let s:truecolors=0
+endif
+
+if ((has("gui_running") || s:truecolors == 1) && g:solarized_degrade == 0)
+    " When GUI running or termguicolors set,  use guifg/guibg/guisp attributes.
+    " An exception is when termguicolors set in vim, cterm attributes is still 
+    " used, and nvim use gui attributes.
+    if (has("gui_running") || has('nvim-0.5.0'))
+        let s:fmode   = "gui"
+    else
+        let s:fmode   = "cterm"
+    endif
     let s:vmode       = "gui"
     let s:base03      = "#002b36"
     let s:base02      = "#073642"
@@ -257,12 +283,16 @@ if (has("gui_running") && g:solarized_degrade == 0)
     let s:violet      = "#6c71c4"
     let s:blue        = "#268bd2"
     let s:cyan        = "#2aa198"
-    "let s:green       = "#859900" "original
-    let s:green       = "#719e07" "experimental
-elseif (has("gui_running") && g:solarized_degrade == 1)
+    let s:green       = "#859900"
+elseif ((has("gui_running") || s:truecolors == 1) && g:solarized_degrade == 1)
     " These colors are identical to the 256 color mode. They may be viewed
     " while in gui mode via "let g:solarized_degrade=1", though this is not
     " recommened and is for testing only.
+    if (has("gui_running") || has('nvim-0.5.0'))
+        let s:fmode   = "gui"
+    else
+        let s:fmode   = "cterm"
+    endif
     let s:vmode       = "gui"
     let s:base03      = "#1c1c1c"
     let s:base02      = "#262626"
@@ -282,6 +312,7 @@ elseif (has("gui_running") && g:solarized_degrade == 1)
     let s:green       = "#5f8700"
 elseif g:solarized_termcolors != 256 && &t_Co >= 16
     let s:vmode       = "cterm"
+    let s:fmode       = "cterm"
     let s:base03      = "8"
     let s:base02      = "0"
     let s:base01      = "10"
@@ -300,6 +331,7 @@ elseif g:solarized_termcolors != 256 && &t_Co >= 16
     let s:green       = "2"
 elseif g:solarized_termcolors == 256
     let s:vmode       = "cterm"
+    let s:fmode       = "cterm"
     let s:base03      = "234"
     let s:base02      = "235"
     let s:base01      = "239"
@@ -318,6 +350,7 @@ elseif g:solarized_termcolors == 256
     let s:green       = "64"
 else
     let s:vmode       = "cterm"
+    let s:fmode       = "cterm"
     let s:bright      = "* term=bold cterm=bold"
 "   let s:base03      = "0".s:bright
 "   let s:base02      = "0"
@@ -472,25 +505,25 @@ exe "let s:fg_violet    = ' ".s:vmode."fg=".s:violet ."'"
 exe "let s:fg_blue      = ' ".s:vmode."fg=".s:blue   ."'"
 exe "let s:fg_cyan      = ' ".s:vmode."fg=".s:cyan   ."'"
 
-exe "let s:fmt_none     = ' ".s:vmode."=NONE".          " term=NONE".    "'"
-exe "let s:fmt_bold     = ' ".s:vmode."=NONE".s:b.      " term=NONE".s:b."'"
-exe "let s:fmt_bldi     = ' ".s:vmode."=NONE".s:b.      " term=NONE".s:b."'"
-exe "let s:fmt_undr     = ' ".s:vmode."=NONE".s:u.      " term=NONE".s:u."'"
-exe "let s:fmt_undb     = ' ".s:vmode."=NONE".s:u.s:b.  " term=NONE".s:u.s:b."'"
-exe "let s:fmt_undi     = ' ".s:vmode."=NONE".s:u.      " term=NONE".s:u."'"
-exe "let s:fmt_uopt     = ' ".s:vmode."=NONE".s:ou.     " term=NONE".s:ou."'"
-exe "let s:fmt_curl     = ' ".s:vmode."=NONE".s:c.      " term=NONE".s:c."'"
-exe "let s:fmt_ital     = ' ".s:vmode."=NONE".s:i.      " term=NONE".s:i."'"
-exe "let s:fmt_stnd     = ' ".s:vmode."=NONE".s:s.      " term=NONE".s:s."'"
-exe "let s:fmt_revr     = ' ".s:vmode."=NONE".s:r.      " term=NONE".s:r."'"
-exe "let s:fmt_revb     = ' ".s:vmode."=NONE".s:r.s:b.  " term=NONE".s:r.s:b."'"
+exe "let s:fmt_none     = ' ".s:fmode."=NONE".          " term=NONE".    "'"
+exe "let s:fmt_bold     = ' ".s:fmode."=NONE".s:b.      " term=NONE".s:b."'"
+exe "let s:fmt_bldi     = ' ".s:fmode."=NONE".s:b.      " term=NONE".s:b."'"
+exe "let s:fmt_undr     = ' ".s:fmode."=NONE".s:u.      " term=NONE".s:u."'"
+exe "let s:fmt_undb     = ' ".s:fmode."=NONE".s:u.s:b.  " term=NONE".s:u.s:b."'"
+exe "let s:fmt_undi     = ' ".s:fmode."=NONE".s:u.      " term=NONE".s:u."'"
+exe "let s:fmt_uopt     = ' ".s:fmode."=NONE".s:ou.     " term=NONE".s:ou."'"
+exe "let s:fmt_curl     = ' ".s:fmode."=NONE".s:c.      " term=NONE".s:c."'"
+exe "let s:fmt_ital     = ' ".s:fmode."=NONE".s:i.      " term=NONE".s:i."'"
+exe "let s:fmt_stnd     = ' ".s:fmode."=NONE".s:s.      " term=NONE".s:s."'"
+exe "let s:fmt_revr     = ' ".s:fmode."=NONE".s:r.      " term=NONE".s:r."'"
+exe "let s:fmt_revb     = ' ".s:fmode."=NONE".s:r.s:b.  " term=NONE".s:r.s:b."'"
 " revbb (reverse bold for bright colors) is only set to actual bold in low 
 " color terminals (t_co=8, such as OS X Terminal.app) and should only be used 
 " with colors 8-15.
-exe "let s:fmt_revbb    = ' ".s:vmode."=NONE".s:r.s:bb.   " term=NONE".s:r.s:bb."'"
-exe "let s:fmt_revbbu   = ' ".s:vmode."=NONE".s:r.s:bb.s:u." term=NONE".s:r.s:bb.s:u."'"
+exe "let s:fmt_revbb    = ' ".s:fmode."=NONE".s:r.s:bb.   " term=NONE".s:r.s:bb."'"
+exe "let s:fmt_revbbu   = ' ".s:fmode."=NONE".s:r.s:bb.s:u." term=NONE".s:r.s:bb.s:u."'"
 
-if has("gui_running")
+if has("gui_running") || s:truecolors == 1
     exe "let s:sp_none      = ' guisp=".s:none   ."'"
     exe "let s:sp_back      = ' guisp=".s:back   ."'"
     exe "let s:sp_base03    = ' guisp=".s:base03 ."'"
@@ -531,6 +564,33 @@ else
 endif
 
 "}}}
+" terminal ansi color {{{
+" ---------------------------------------------------------------------
+" In GUI mode or with 'termguicolors', the 16 ANSI colors used by default in
+" new terminal windows may be configured using the variable
+" `g:terminal_ansi_colors`.
+if has("gui_running") || s:truecolors == 1
+    let g:terminal_ansi_colors = [
+                \ s:base02,
+                \ s:red,
+                \ s:green,
+                \ s:yellow,
+                \ s:blue,
+                \ s:magenta,
+                \ s:cyan,
+                \ s:base2,
+                \ s:base03,
+                \ s:orange,
+                \ s:base01,
+                \ s:base00,
+                \ s:base0,
+                \ s:violet,
+                \ s:base1,
+                \ s:base3
+                \]
+endif
+
+"}}}
 " Basic highlighting"{{{
 " ---------------------------------------------------------------------
 " note that link syntax to avoid duplicate configuration doesn't work with the
@@ -553,7 +613,7 @@ exe "hi! Identifier"     .s:fmt_none   .s:fg_blue   .s:bg_none
 "       *Identifier      any variable name
 "        Function        function name (also: methods for classes)
 "
-exe "hi! Statement"      .s:fmt_none   .s:fg_green  .s:bg_none
+exe "hi! Statement"      .s:fmt_none   .s:fg_magenta  .s:bg_none
 "       *Statement       any statement
 "        Conditional     if, then, else, endif, switch, etc.
 "        Repeat          for, do, while, etc.
@@ -569,7 +629,7 @@ exe "hi! PreProc"        .s:fmt_none   .s:fg_orange .s:bg_none
 "        Macro           same as Define
 "        PreCondit       preprocessor #if, #else, #endif, etc.
 
-exe "hi! Type"           .s:fmt_none   .s:fg_yellow .s:bg_none
+exe "hi! Type"           .s:fmt_none   .s:fg_green .s:bg_none
 "       *Type            int, long, char, etc.
 "        StorageClass    static, register, volatile, etc.
 "        Structure       struct, union, enum, etc.
@@ -589,12 +649,20 @@ exe "hi! Underlined"     .s:fmt_none   .s:fg_violet .s:bg_none
 exe "hi! Ignore"         .s:fmt_none   .s:fg_none   .s:bg_none
 "       *Ignore          left blank, hidden  |hl-Ignore|
 
-exe "hi! Error"          .s:fmt_bold   .s:fg_red    .s:bg_none
+exe "hi! Error"          .s:fmt_none   .s:fg_red    .s:bg_none
 "       *Error           any erroneous construct
 
-exe "hi! Todo"           .s:fmt_bold   .s:fg_magenta.s:bg_none
+exe "hi! Todo"           .s:fmt_none   .s:fg_magenta.s:bg_none
 "       *Todo            anything that needs extra attention; mostly the
 "                        keywords TODO FIXME and XXX
+exe "hi! Property"       .s:fmt_none   .s:fg_violet .s:bg_none
+"       *Property        class property, member variable
+"
+exe "hi! Text"           .s:fmt_none   .s:fg_base0  .s:bg_none
+"       *Text            any text without backgroud color
+"
+exe "hi! Parameter"      .s:fmt_none   .s:fg_yellow  .s:bg_none
+"       *Parameter       function parameter
 "
 "}}}
 " Extended highlighting "{{{
@@ -609,8 +677,10 @@ else
     exe "hi! SpecialKey" .s:fmt_bold   .s:fg_base00 .s:bg_base02
     exe "hi! NonText"    .s:fmt_bold   .s:fg_base00 .s:bg_none
 endif
-exe "hi! StatusLine"     .s:fmt_none   .s:fg_base1  .s:bg_base02 .s:fmt_revbb
-exe "hi! StatusLineNC"   .s:fmt_none   .s:fg_base00 .s:bg_base02 .s:fmt_revbb
+exe "hi! StatusLine"     .s:fmt_none   .s:fg_base0  .s:bg_base02
+exe "hi! StatusLineNC"   .s:fmt_none   .s:fg_base01  .s:bg_base02
+exe "hi! StatusLineTerm"     .s:fmt_none   .s:fg_base0  .s:bg_base02
+exe "hi! StatusLineTermNC"   .s:fmt_none   .s:fg_base01 .s:bg_base02
 exe "hi! Visual"         .s:fmt_none   .s:fg_base01 .s:bg_base03 .s:fmt_revbb
 exe "hi! Directory"      .s:fmt_none   .s:fg_blue   .s:bg_none
 exe "hi! ErrorMsg"       .s:fmt_revr   .s:fg_red    .s:bg_none
@@ -621,7 +691,7 @@ exe "hi! ModeMsg"        .s:fmt_none   .s:fg_blue   .s:bg_none
 exe "hi! LineNr"         .s:fmt_none   .s:fg_base01 .s:bg_base02
 exe "hi! Question"       .s:fmt_bold   .s:fg_cyan   .s:bg_none
 if ( has("gui_running") || &t_Co > 8 )
-    exe "hi! VertSplit"  .s:fmt_none   .s:fg_base00 .s:bg_base00
+    exe "hi! VertSplit"  .s:fmt_none   .s:fg_base00 .s:bg_none
 else
     exe "hi! VertSplit"  .s:fmt_revbb  .s:fg_base00 .s:bg_base02
 endif
@@ -629,7 +699,7 @@ exe "hi! Title"          .s:fmt_bold   .s:fg_orange .s:bg_none
 exe "hi! VisualNOS"      .s:fmt_stnd   .s:fg_none   .s:bg_base02 .s:fmt_revbb
 exe "hi! WarningMsg"     .s:fmt_bold   .s:fg_red    .s:bg_none
 exe "hi! WildMenu"       .s:fmt_none   .s:fg_base2  .s:bg_base02 .s:fmt_revbb
-exe "hi! Folded"         .s:fmt_undb   .s:fg_base0  .s:bg_base02  .s:sp_base03
+exe "hi! Folded"         .s:fmt_none   .s:fg_base0  .s:bg_base03  .s:sp_base03
 exe "hi! FoldColumn"     .s:fmt_none   .s:fg_base0  .s:bg_base02
 if      (g:solarized_diffmode=="high")
 exe "hi! DiffAdd"        .s:fmt_revr   .s:fg_green  .s:bg_none
@@ -654,25 +724,27 @@ exe "hi! DiffDelete"     .s:fmt_none   .s:fg_red    .s:bg_base02
 exe "hi! DiffText"       .s:fmt_none   .s:fg_blue   .s:bg_base02 .s:sp_blue
     endif
 endif
-exe "hi! SignColumn"     .s:fmt_none   .s:fg_base0
+exe "hi! SignColumn"     .s:fmt_none   .s:fg_base0  .s:bg_base02
 exe "hi! Conceal"        .s:fmt_none   .s:fg_blue   .s:bg_none
 exe "hi! SpellBad"       .s:fmt_curl   .s:fg_none   .s:bg_none    .s:sp_red
 exe "hi! SpellCap"       .s:fmt_curl   .s:fg_none   .s:bg_none    .s:sp_violet
 exe "hi! SpellRare"      .s:fmt_curl   .s:fg_none   .s:bg_none    .s:sp_cyan
 exe "hi! SpellLocal"     .s:fmt_curl   .s:fg_none   .s:bg_none    .s:sp_yellow
-exe "hi! Pmenu"          .s:fmt_none   .s:fg_base0  .s:bg_base02  .s:fmt_revbb
+exe "hi! Pmenu"          .s:fmt_none   .s:fg_base0  .s:bg_base02
 exe "hi! PmenuSel"       .s:fmt_none   .s:fg_base01 .s:bg_base2   .s:fmt_revbb
-exe "hi! PmenuSbar"      .s:fmt_none   .s:fg_base2  .s:bg_base0   .s:fmt_revbb
-exe "hi! PmenuThumb"     .s:fmt_none   .s:fg_base0  .s:bg_base03  .s:fmt_revbb
-exe "hi! TabLine"        .s:fmt_undr   .s:fg_base0  .s:bg_base02  .s:sp_base0
-exe "hi! TabLineFill"    .s:fmt_undr   .s:fg_base0  .s:bg_base02  .s:sp_base0
-exe "hi! TabLineSel"     .s:fmt_undr   .s:fg_base01 .s:bg_base2   .s:sp_base0  .s:fmt_revbbu
+exe "hi! PmenuSbar"      .s:fmt_none   .s:fg_none   .s:bg_base02
+exe "hi! PmenuThumb"     .s:fmt_none   .s:fg_none   .s:bg_base0
+exe "hi! TabLine"        .s:fmt_none   .s:fg_base01 .s:bg_base02  .s:sp_base0
+exe "hi! TabLineFill"    .s:fmt_none   .s:fg_base0  .s:bg_base02  .s:sp_base0
+exe "hi! TabLineSel"     .s:fmt_none   .s:fg_base0  .s:bg_base02  .s:sp_base0
 exe "hi! CursorColumn"   .s:fmt_none   .s:fg_none   .s:bg_base02
 exe "hi! CursorLine"     .s:fmt_uopt   .s:fg_none   .s:bg_base02  .s:sp_base1
 exe "hi! ColorColumn"    .s:fmt_none   .s:fg_none   .s:bg_base02
 exe "hi! Cursor"         .s:fmt_none   .s:fg_base03 .s:bg_base0
 hi! link lCursor Cursor
 exe "hi! MatchParen"     .s:fmt_bold   .s:fg_red    .s:bg_base01
+hi! link debugPC Cursor
+hi! link debugBreakpoint Special
 
 "}}}
 " vim syntax highlighting "{{{
@@ -969,6 +1041,72 @@ exe "hi! pandocMetadataKey"              .s:fg_blue   .s:bg_none   .s:fmt_none
 exe "hi! pandocMetadata"                 .s:fg_blue   .s:bg_none   .s:fmt_bold
 hi! link pandocMetadataTitle             pandocMetadata
 
+"}}}
+" c cpp syntax highlighting "{{{
+hi! link cStructure                     Statement
+hi! link cppStructure                   Statement
+hi! link cppSTLnamespace                Text      
+"}}}
+" coc.nvim semantic highlighting "{{{
+" ---------------------------------------------------------------------
+hi! link CocSemClass                    Type
+hi! link CocSemComment                  Comment
+hi! link CocSemConcept                  Statement
+hi! link CocSemEnum                     Type
+hi! link CocSemEnumMember               Constant
+hi! link CocSemFunction                 Function
+hi! link CocSemMacro                    Define
+hi! link CocSemNamespace                Text
+hi! link CocSemMethod                   Function
+hi! link CocSemParameter                Parameter
+hi! link CocSemProperty                 Property
+hi! link CocSemType                     Type
+hi! link CocSemTypeParameter            Type
+hi! link CocSemVariable                 Text
+
+hi! link CocFloating                    Pmenu
+hi! link CocMenuSel                     PmenuSel
+hi! link CocFloatSbar                   PmenuSbar
+hi! link CocFloatThumb                  PmenuThumb
+
+hi! link CocListSearch                  Search
+hi! link CocInlayHint                   Comment
+hi! link CocCodeLens                    Comment
+
+hi! link CocMarkdownHeader              Identifier
+
+exe "hi! CocListFgGreen"                .s:fg_green
+exe "hi! CocListFgCyan"                 .s:fg_cyan
+exe "hi! CocListFgBlue"                 .s:fg_blue
+exe "hi! CocListFgYellow"               .s:fg_yellow
+exe "hi! CocListFgOrange"               .s:fg_orange
+exe "hi! CocListFgViolet"               .s:fg_violet
+exe "hi! CocListFgMagenta"              .s:fg_magenta
+exe "hi! CocListFgRed"                  .s:fg_red
+
+"}}}
+" doxygen highlighting "{{{
+" ---------------------------------------------------------------------
+hi link doxygenComment Comment
+hi link doxygenBrief Comment
+hi link doxygenBody Comment
+hi link doxygenSpecialOnelineDesc Comment
+hi link doxygenParam Normal
+hi link doxygenSpecial NonText
+hi link doxygenValue Normal
+hi link doxygenParamName Normal
+hi link doxygenParamDirection Normal
+hi link doxygenSymbol Normal
+hi link doxygenBOther Normal
+"}}}
+" treesitter highlighting "{{{
+" ---------------------------------------------------------------------
+hi! link TSProperty                     Property
+hi! link TSField                        Property
+hi! link TSNamespace                    Normal
+hi! link TSPunctBracket                 Normal
+hi! link TSPunctDelimiter               Normal
+hi! link TSParameter                    Normal
 "}}}
 " Utility autocommand "{{{
 " ---------------------------------------------------------------------
